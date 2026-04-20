@@ -20,6 +20,7 @@ namespace DataAccess
         #region Transactions
         public virtual DbSet<DispatchNoteEntity> DispatchNoteEntity { get; set; }
         public virtual DbSet<DispatchNotePartItemsEntity> DispatchNotePartItemsEntity { get; set; }
+        public virtual DbSet<CommonInboundEntity> CommonInboundEntities { get; set; }
 
 
         #endregion

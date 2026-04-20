@@ -37,8 +37,8 @@ namespace DataAccess.Domain
         [Column("LAST_UPDATE_DATE")]
         public DateTime LastUpdateDate { get; set; }
 
-        public ICollection<DispatchNotePartItemsEntity>? CreatedByDispatchNotePartItemsEntity { get; set; }
-        public ICollection<DispatchNotePartItemsEntity>? ModifiedByDispatchNotePartItemsEntity { get; set; }
+        //public ICollection<DispatchNotePartItemsEntity>? CreatedByDispatchNotePartItemsEntity { get; set; }
+        //public ICollection<DispatchNotePartItemsEntity>? ModifiedByDispatchNotePartItemsEntity { get; set; }
      
 
     }

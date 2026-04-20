@@ -10,6 +10,7 @@ namespace DataAccess.Domain
     [Table("MFG_DISPATCH_NOTE_PART_ITEMS_TXN_TB")]
     public class DispatchNotePartItemsEntity : EntityBase
     {
+
         [Column("DISPATCH_NOTE_ID")]
         public decimal DispatchNoteid { get; set; }
 

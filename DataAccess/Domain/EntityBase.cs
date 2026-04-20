@@ -27,7 +27,7 @@ namespace DataAccess.Domain
 
         [Column("LAST_UPDATE_DATE")]
         public DateTime LastUpdateDate { get; set; }
-        public UserEntity CreatedByDetails { get; set; }
-        public UserEntity LastUpdatedByDetails { get; set; }
+        //public UserEntity CreatedByDetails { get; set; }
+        //public UserEntity LastUpdatedByDetails { get; set; }
     }
 }

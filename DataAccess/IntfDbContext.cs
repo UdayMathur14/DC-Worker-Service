@@ -11,7 +11,6 @@ namespace DataAccess
         public IntfDbContext(IConfiguration configuration, DbContextOptions<IntfDbContext> options) : base(options)
         {
             Configuration = configuration;
-            string connectionString = Environment.GetEnvironmentVariable(ConnectionString.IntfSchema);
         }
 
         public virtual DbSet<ShpcfmEntity> ShpcfmEntity { get; set; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataAccess.Domain.Masters.LookUp;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -97,7 +98,9 @@ namespace DataAccess.Domain
         [Column("CREATION_FLAG")]
         public string? CreationFlag { get; set; }
         public ICollection<VehicleEntity> VehicleEntities { get; set; }
+        public LookUpEntity Locations { get; set; }
         public ICollection<DispatchNoteEntity> TransporterDetail { get; set; }
-   
+      
+
     }
 }

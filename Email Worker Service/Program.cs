@@ -11,7 +11,7 @@ var builder = Host.CreateDefaultBuilder(args)
                           context.Configuration.GetSection(DispatchNoteWorkerOptions.SectionName));
 
                       services.AddHostedService<ProcessBackgroundJob>();
-                      services.AddApplicationServices();
+                      services.AddApplicationServices(context.Configuration);
                       services.AddBusinessLayerServices();
                   });
 

@@ -1,5 +1,7 @@
 ﻿using DataAccess.Configuration;
 using DataAccess.Domain;
+using DataAccess.Domain.Masters.LookUp;
+using DataAccess.Domain.Masters.LookUpType;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -12,7 +14,6 @@ namespace DataAccess
         public ApplicationDbContext(IConfiguration configuration, DbContextOptions<ApplicationDbContext> options) : base(options)
         {
             Configuration = configuration;
-            string connectionString = Environment.GetEnvironmentVariable(ConnectionString.IlfrmSchema); 
         }
 
 
@@ -20,6 +21,10 @@ namespace DataAccess
         #region Transactions
         public virtual DbSet<DispatchNoteEntity> DispatchNoteEntity { get; set; }
         public virtual DbSet<DispatchNotePartItemsEntity> DispatchNotePartItemsEntity { get; set; }
+        public virtual DbSet<VehicleEntity> VehicleEntities { get; set; }
+        public virtual DbSet<VendorEntity> VendorEntities { get; set; }
+        public virtual DbSet<TransporterEntity> TransporterEntities { get; set; }
+        public virtual DbSet<PartEntity> PartEntities { get; set; }
         public virtual DbSet<CommonInboundEntity> CommonInboundEntities { get; set; }
 
 
@@ -27,11 +32,32 @@ namespace DataAccess
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<LookUpEntity>(entity =>
+            {
+                entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd();
+
+                entity.HasOne(b => b.LookUpType)
+                .WithMany(a => a.LookUp)
+                .HasForeignKey(b => b.TypeId);
+
+            });
+
+
+            modelBuilder.Entity<LookUpTypeEntity>(entity =>
+            {
+                entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd();
+            });
 
             modelBuilder.Entity<DispatchNoteEntity>(entity =>
             {
                 entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd();
+
+                entity.HasOne(b => b.Locations)
+                .WithMany(a => a.DispatchNoteLocationEntity)
+                .HasForeignKey(b => b.LocationId);
 
                 entity.HasOne(b => b.Suppliers)
                 .WithMany(a => a.Suppliers)
@@ -59,14 +85,11 @@ namespace DataAccess
                 .WithMany(a => a.DispatchNotePartEntity)
                 .HasForeignKey(b => b.PartId);
 
-                entity.HasOne(b => b.CreatedByDetails)
-             .WithMany(a => a.CreatedByDispatchNotePartItemsEntity)
-             .HasForeignKey(b => b.CreatedBy);
+                entity.Navigation(p => p.PartEntity)
+                .UsePropertyAccessMode(PropertyAccessMode.Property);
 
-                entity.HasOne(b => b.LastUpdatedByDetails)
-                      .WithMany(a => a.ModifiedByDispatchNotePartItemsEntity)
-                      .HasForeignKey(b => b.LastUpdatedBy);
-
+                entity.Navigation(p => p.DispatchNoteEntity)
+               .UsePropertyAccessMode(PropertyAccessMode.Property);
             });
 
             modelBuilder.Entity<TransporterEntity>(entity =>
@@ -74,6 +97,42 @@ namespace DataAccess
                 entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd();
 
+                entity.HasOne(b => b.Locations)
+                .WithMany(a => a.Locations2)
+                .HasForeignKey(b => b.LocationId);
+
+            });
+
+            modelBuilder.Entity<VendorEntity>(entity =>
+            {
+                entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd();
+
+                entity.HasOne(b => b.TaxationType)
+               .WithMany(a => a.VendorTaxationType)
+               .HasForeignKey(b => b.TaxationTypeId);
+
+                entity.HasOne(b => b.TaxCodes)
+               .WithMany(a => a.VendorTaxCodes)
+               .HasForeignKey(b => b.TaxCodeId);
+            });
+
+            modelBuilder.Entity<VehicleEntity>(entity =>
+            {
+                entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd();
+
+                entity.HasOne(b => b.TransporterEntity)
+                .WithMany(a => a.VehicleEntities)
+                .HasForeignKey(b => b.TransporterId);
+
+                entity.HasOne(b => b.Locations)
+               .WithMany(a => a.LocationId2)
+               .HasForeignKey(b => b.LocationId);
+
+                entity.HasOne(b => b.VehicleSize)
+               .WithMany(a => a.VehicleSizeId2)
+               .HasForeignKey(b => b.VehicleSizeId);
             });
 
             base.OnModelCreating(modelBuilder);

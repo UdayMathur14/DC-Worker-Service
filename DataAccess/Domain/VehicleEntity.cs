@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataAccess.Domain.Masters.LookUp;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Domain
 {
+
+    [Table("MFG_VEHICLE_MST_TB")]
     public class VehicleEntity :EntityBase
     {
         [Column("LOCATION_ID")]
@@ -29,7 +32,12 @@ namespace DataAccess.Domain
 
         [Column("INACTIVE_DATE")]
         public DateTime? InactiveDate { get; set; }
+
         public TransporterEntity TransporterEntity { get; set; }
+
+        public LookUpEntity Locations { get; set; }
+        public LookUpEntity VehicleSize { get; set; }
+
         public ICollection<DispatchNoteEntity> Vehicles { get; set; }
 
     }

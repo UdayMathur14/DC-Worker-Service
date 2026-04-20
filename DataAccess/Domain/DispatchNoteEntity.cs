@@ -1,10 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using DataAccess.Domain.Masters.LookUp;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataAccess.Domain
 {
     [Table("MFG_DISPATCH_NOTE_CREATION_HEADER_TXN_TB")]
     public class DispatchNoteEntity : EntityBase
     {
+        [Column("LOCATION_ID")]
+        public decimal LocationId { get; set; }
+
         [Column("DISPATCH_NUMBER")]
         public string? DispatchNumber { get; set; }
 
@@ -28,10 +32,9 @@ namespace DataAccess.Domain
         [Column("TRANSPORTER_MODE")]
         public string? TransporterMode { get; set; }
         public ICollection<DispatchNotePartItemsEntity> DispatchNotePartEntities { get; set; }
+        public LookUpEntity Locations { get; set; }
         public VendorEntity Suppliers { get; set; }
         public VehicleEntity Vehicles { get; set; }
         public TransporterEntity Transporter { get; set; }
-
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataAccess.Domain.Masters.LookUp;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -66,6 +67,8 @@ namespace DataAccess.Domain
 
         [Column("TAX_CODES_ID")]
         public decimal? TaxCodeId { get; set; }
+        public LookUpEntity? TaxationType { get; set; }
+        public LookUpEntity? TaxCodes { get; set; }
         public ICollection<DispatchNoteEntity> Suppliers { get; set; }
     }
 }

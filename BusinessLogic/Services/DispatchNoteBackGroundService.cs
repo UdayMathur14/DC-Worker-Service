@@ -1,281 +1,173 @@
 using BusinessLogic.Interfaces;
 using BusinessLogic.Models;
-using BusinessLogic.Options;
 using DataAccess.Domain;
 using DataAccess.Interfaces;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace BusinessLogic.Services
 {
     public class DispatchNoteService(
         IDispatchNoteRepository dispatchNoteRepository,
-        IOptions<DispatchNoteWorkerOptions> options,
         ILogger<DispatchNoteService> logger) : IDispatchNoteService
     {
-        private const string DispatchTxnTypeCode = "DISPATCH_NOTE_INBOUND";
-        private const string ShpcfmTxnTypeCode = "SHPCFM_INBOUND";
-
-        private readonly DispatchNoteWorkerOptions _options = options.Value;
+        private const string DispatchTxnTypeCode = "DISPATCH_NOTE";
+        private const string GateOutTxnTypeCode = "GATE_OUT";
+        private const string DispatchDomainFallback = "DISPATCH";
+        private const string DispatchDocumentType = "DISPATCH_NOTE";
 
         public async Task<DispatchNoteProcessingResult> ProcessPendingDispatchNotesAsync(CancellationToken cancellationToken)
         {
             var dispatchResult = await ProcessDispatchInboundAsync(cancellationToken);
-            var shpcfmResult = dispatchNoteRepository.IsShpcfmConfigured()
-                ? await ProcessShpcfmInboundAsync(cancellationToken)
-                : LogAndReturnSkippedShpcfmResult();
+            var gateOutResult = dispatchNoteRepository.IsGateOutConfigured()
+                ? await ProcessGateOutInboundAsync(cancellationToken)
+                : LogAndReturnSkippedGateOutResult();
 
             return new DispatchNoteProcessingResult
             {
-                TotalFetched = dispatchResult.TotalFetched + shpcfmResult.TotalFetched,
-                ProcessedCount = dispatchResult.ProcessedCount + shpcfmResult.ProcessedCount,
-                FailedCount = dispatchResult.FailedCount + shpcfmResult.FailedCount
+                TotalFetched = dispatchResult.TotalFetched + gateOutResult.TotalFetched,
+                ProcessedCount = dispatchResult.ProcessedCount + gateOutResult.ProcessedCount,
+                FailedCount = dispatchResult.FailedCount + gateOutResult.FailedCount
             };
         }
 
-        private DispatchNoteProcessingResult LogAndReturnSkippedShpcfmResult()
+        private DispatchNoteProcessingResult LogAndReturnSkippedGateOutResult()
         {
-            logger.LogWarning("SHPCFM inbound processing skipped because INTF database connection is not configured.");
+            logger.LogWarning("Gate-out inbound processing skipped because Oracle_INTF connection is not configured.");
             return new DispatchNoteProcessingResult();
         }
 
         private async Task<DispatchNoteProcessingResult> ProcessDispatchInboundAsync(CancellationToken cancellationToken)
         {
-            
-            var pendingDispatchNotes = await dispatchNoteRepository.GetPendingDispatchInboundAsync(
-                _options.PendingStatus,
-                _options.BatchSize,
-                cancellationToken);
-
-            var processedCount = 0;
+            var dispatchNotes = await dispatchNoteRepository.GetDispatchInboundAsync(cancellationToken);
+            var insertedCount = 0;
             var failedCount = 0;
 
-            foreach (var dispatchNote in pendingDispatchNotes)
+            foreach (var dispatchNote in dispatchNotes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try
                 {
-                    if (!IsDispatchInboundValid(dispatchNote, out var validationMessage))
-                    {
-                        failedCount++;
-                        logger.LogWarning(
-                            "Dispatch note inbound {DispatchNoteId} skipped because {Reason}.",
-                            dispatchNote.Id,
-                            validationMessage);
-
-                        await dispatchNoteRepository.UpdateDispatchInboundStatusAsync(
-                            dispatchNote.Id,
-                            _options.FailedStatus,
-                            _options.UpdatedBy,
-                            cancellationToken);
-
-                        continue;
-                    }
-
-                    var alreadyExists = await dispatchNoteRepository.CommonInboundExistsAsync(
-                        dispatchNote.Id,
-                        DispatchTxnTypeCode,
-                        cancellationToken);
-
-                    if (!alreadyExists)
-                    {
-                        var commonInboundEntity = MapDispatchInboundToCommonInbound(dispatchNote);
-                        await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
-                    }
-
-                    await dispatchNoteRepository.UpdateDispatchInboundStatusAsync(
-                        dispatchNote.Id,
-                        _options.ProcessedStatus,
-                        _options.UpdatedBy,
-                        cancellationToken);
-
-                    processedCount++;
+                    var commonInboundEntity = MapDispatchInboundToCommonInbound(dispatchNote);
+                    await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
+                    insertedCount++;
                 }
                 catch (Exception ex)
                 {
                     failedCount++;
-                    logger.LogError(ex, "Dispatch note inbound {DispatchNoteId} processing failed.", dispatchNote.Id);
-
-                    await dispatchNoteRepository.UpdateDispatchInboundStatusAsync(
-                        dispatchNote.Id,
-                        _options.FailedStatus,
-                        _options.UpdatedBy,
-                        cancellationToken);
+                    logger.LogError(ex, "Dispatch inbound insert failed for DispatchNoteId={DispatchNoteId}", dispatchNote.Id);
                 }
             }
 
             return new DispatchNoteProcessingResult
             {
-                TotalFetched = pendingDispatchNotes.Count,
-                ProcessedCount = processedCount,
+                TotalFetched = dispatchNotes.Count,
+                ProcessedCount = insertedCount,
                 FailedCount = failedCount
             };
         }
 
-        private async Task<DispatchNoteProcessingResult> ProcessShpcfmInboundAsync(CancellationToken cancellationToken)
+        private async Task<DispatchNoteProcessingResult> ProcessGateOutInboundAsync(CancellationToken cancellationToken)
         {
-            var pendingShpcfmRecords = await dispatchNoteRepository.GetPendingShpcfmInboundAsync(
-                _options.PendingStatus,
-                _options.BatchSize,
-                cancellationToken);
-
-            var processedCount = 0;
+            var gateOutRecords = await dispatchNoteRepository.GetGateOutInboundAsync(cancellationToken);
+            var insertedCount = 0;
             var failedCount = 0;
 
-            foreach (var shpcfm in pendingShpcfmRecords)
+            foreach (var gateOutRecord in gateOutRecords)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try
                 {
-                    if (!IsShpcfmInboundValid(shpcfm, out var validationMessage))
-                    {
-                        failedCount++;
-                        logger.LogWarning(
-                            "SHPCFM inbound {ShpcfmId} skipped because {Reason}.",
-                            shpcfm.Id,
-                            validationMessage);
-
-                        await dispatchNoteRepository.UpdateShpcfmInboundStatusAsync(
-                            shpcfm.Id,
-                            _options.FailedStatus,
-                            _options.UpdatedBy,
-                            cancellationToken);
-
-                        continue;
-                    }
-
-                    var alreadyExists = await dispatchNoteRepository.CommonInboundExistsAsync(
-                        shpcfm.Id,
-                        ShpcfmTxnTypeCode,
-                        cancellationToken);
-
-                    if (!alreadyExists)
-                    {
-                        var commonInboundEntity = MapShpcfmInboundToCommonInbound(shpcfm);
-                        await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
-                    }
-
-                    await dispatchNoteRepository.UpdateShpcfmInboundStatusAsync(
-                        shpcfm.Id,
-                        _options.ProcessedStatus,
-                        _options.UpdatedBy,
-                        cancellationToken);
-
-                    processedCount++;
+                    var commonInboundEntity = MapGateOutInboundToCommonInbound(gateOutRecord);
+                    await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
+                    insertedCount++;
                 }
                 catch (Exception ex)
                 {
                     failedCount++;
-                    logger.LogError(ex, "SHPCFM inbound {ShpcfmId} processing failed.", shpcfm.Id);
-
-                    await dispatchNoteRepository.UpdateShpcfmInboundStatusAsync(
-                        shpcfm.Id,
-                        _options.FailedStatus,
-                        _options.UpdatedBy,
-                        cancellationToken);
+                    logger.LogError(ex, "Gate-out inbound insert failed for InterfaceId={InterfaceId}", gateOutRecord.InterfaceId);
                 }
             }
 
             return new DispatchNoteProcessingResult
             {
-                TotalFetched = pendingShpcfmRecords.Count,
-                ProcessedCount = processedCount,
+                TotalFetched = gateOutRecords.Count,
+                ProcessedCount = insertedCount,
                 FailedCount = failedCount
             };
         }
 
-        private static bool IsDispatchInboundValid(DispatchNoteEntity dispatchNote, out string validationMessage)
+        private static CommonInboundEntity MapDispatchInboundToCommonInbound(DispatchNoteEntity dispatchNote)
         {
-            if (string.IsNullOrWhiteSpace(dispatchNote.DispatchNumber))
-            {
-                validationMessage = "dispatch number is missing";
-                return false;
-            }
-
-            if (dispatchNote.DispatchNotePartEntities is null || dispatchNote.DispatchNotePartEntities.Count == 0)
-            {
-                validationMessage = "part items are missing";
-                return false;
-            }
-
-            validationMessage = string.Empty;
-            return true;
-        }
-
-        private static bool IsShpcfmInboundValid(ShpcfmEntity shpcfm, out string validationMessage)
-        {
-            if (string.IsNullOrWhiteSpace(shpcfm.SourceHeadNo))
-            {
-                validationMessage = "source head number is missing";
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(shpcfm.SourceTypeCode))
-            {
-                validationMessage = "source type code is missing";
-                return false;
-            }
-
-            validationMessage = string.Empty;
-            return true;
-        }
-
-        private CommonInboundEntity MapDispatchInboundToCommonInbound(DispatchNoteEntity dispatchNote)
-        {
-            var now = DateTime.UtcNow;
             var invoiceAmount = dispatchNote.DispatchNotePartEntities?
-                .Sum(item => item.PartQty * (item.PartEntity?.PartPrice ?? 0m));
+                .Sum(item => item.PartQty * (item.PartEntity?.PartPrice ?? 0m)) ?? 0m;
 
             return new CommonInboundEntity
             {
-                FrmSapTxnTransactionId = dispatchNote.Id,
+                InterfaceId = dispatchNote.Id,
                 TxnTypeCode = DispatchTxnTypeCode,
-                DocumentNumber = dispatchNote.DispatchNumber,
+                Domain = dispatchNote.Locations?.Code ?? DispatchDomainFallback,
+                DocumentNo = dispatchNote.DispatchNumber,
                 DocumentCreationDate = dispatchNote.DispatchDate,
-                DocumentType = "DISPATCH_NOTE",
+                DocumentType = DispatchDocumentType,
                 InvoiceAmount = invoiceAmount,
-                InvTotalAmount = invoiceAmount,
-                FromDestination = dispatchNote.Suppliers?.VendorName,
-                ToDestination = dispatchNote.Transporter?.TransporterName,
-                TransporterId = dispatchNote.TransporterId.HasValue ? Convert.ToInt64(dispatchNote.TransporterId.Value) : null,
-                VehicleNumber = dispatchNote.Vehicles?.VehicleNumber,
-                VehicleSizeId = Convert.ToInt64(dispatchNote.Vehicles?.VehicleSizeId ?? 0),
-                FrlrNumber = dispatchNote.FrlrNumber,
+                CgstUtRate = 0,
+                SgstUtRate = 0,
+                IgstRate = 0,
+                TaxAmountCgst = 0,
+                TaxAmountSgstUtgst = 0,
+                TaxAmountIgst = 0,
+                InvoiceTotAmountWithtax = invoiceAmount,
+                FromPlantCode = dispatchNote.Locations?.Code,
+                FromStorageLocation = dispatchNote.Locations?.Value,
+                FromCustomerCode = null,
+                ToPlantCode = null,
+                ToStorageLocation = null,
+                ToVendorCode = dispatchNote.Suppliers?.VendorCode,
+                ToCustomerCode = null,
+                TransporterCode = dispatchNote.Transporter?.TransporterCode,
+                TransportationMode = dispatchNote.TransporterMode,
+                VehicleNo = dispatchNote.Vehicles?.VehicleNumber,
+                VehicleSize = dispatchNote.Vehicles?.VehicleSize?.Code ?? dispatchNote.Vehicles?.VehicleSize?.Value,
+                FrlrNo = dispatchNote.FrlrNumber,
                 FrlrDate = dispatchNote.FrlrDate,
-                OpenFlag = dispatchNote.OpenFlag,
-                Status = "Active",
-                CreatedBy = _options.UpdatedBy,
-                CreationDate = now,
-                LastUpdatedBy = _options.UpdatedBy,
-                LastUpdateDate = now
+                TravellingDistance = 0
             };
         }
 
-        private CommonInboundEntity MapShpcfmInboundToCommonInbound(ShpcfmEntity shpcfm)
+        private static CommonInboundEntity MapGateOutInboundToCommonInbound(GateOutInboundEntity gateOutRecord)
         {
-            var now = DateTime.UtcNow;
-
             return new CommonInboundEntity
             {
-                FrmSapTxnTransactionId = shpcfm.Id,
-                TxnTypeCode = ShpcfmTxnTypeCode,
-                DocumentNumber = shpcfm.SourceHeadNo,
-                DocumentCreationDate = shpcfm.RecordCreationDate ?? now,
-                DocumentType = shpcfm.AuartTxt,
-                InvoiceAmount = shpcfm.Kwmeng,
-                InvTotalAmount = shpcfm.Lfimg,
-                FromDestination = shpcfm.BukrsTxt ?? shpcfm.Werks,
-                ToDestination = shpcfm.ShipToCityName,
-                FrlrNumber = shpcfm.Zdlvno ?? shpcfm.DeliveryNoGerp,
-                FrlrDate = shpcfm.RecordCreationDate,
-                OpenFlag = shpcfm.CancelFlag,
-                Status = "Active",
-                CreatedBy = _options.UpdatedBy,
-                CreationDate = now,
-                LastUpdatedBy = _options.UpdatedBy,
-                LastUpdateDate = now
+                InterfaceId = gateOutRecord.InterfaceId,
+                TxnTypeCode = string.IsNullOrWhiteSpace(gateOutRecord.ZtxnType) ? GateOutTxnTypeCode : gateOutRecord.ZtxnType.Trim().ToUpperInvariant(),
+                Domain = gateOutRecord.Zdomain,
+                DocumentNo = gateOutRecord.ZdocumentNo,
+                DocumentCreationDate = gateOutRecord.ZdocumentDate ?? DateTime.UtcNow.Date,
+                DocumentType = string.IsNullOrWhiteSpace(gateOutRecord.ZtxnType) ? GateOutTxnTypeCode : gateOutRecord.ZtxnType.Trim().ToUpperInvariant(),
+                InvoiceAmount = 0,
+                CgstUtRate = 0,
+                SgstUtRate = 0,
+                IgstRate = 0,
+                TaxAmountCgst = 0,
+                TaxAmountSgstUtgst = 0,
+                TaxAmountIgst = 0,
+                InvoiceTotAmountWithtax = 0,
+                FromPlantCode = gateOutRecord.Werks,
+                FromStorageLocation = null,
+                FromCustomerCode = null,
+                ToPlantCode = null,
+                ToStorageLocation = null,
+                ToVendorCode = null,
+                ToCustomerCode = null,
+                TransporterCode = gateOutRecord.TransId,
+                TransportationMode = gateOutRecord.ZtransMode,
+                VehicleNo = gateOutRecord.Vehicle,
+                VehicleSize = gateOutRecord.VehSize,
+                FrlrNo = null,
+                FrlrDate = null,
+                TravellingDistance = 0
             };
         }
     }

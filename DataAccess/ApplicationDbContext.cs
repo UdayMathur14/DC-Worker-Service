@@ -135,6 +135,11 @@ namespace DataAccess
                .HasForeignKey(b => b.VehicleSizeId);
             });
 
+            modelBuilder.Entity<CommonInboundEntity>(entity =>
+            {
+                entity.HasKey(e => new { e.InterfaceId, e.TxnTypeCode });
+            });
+
             base.OnModelCreating(modelBuilder);
 
         }

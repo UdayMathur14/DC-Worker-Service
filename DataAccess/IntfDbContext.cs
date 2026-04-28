@@ -14,6 +14,7 @@ namespace DataAccess
         }
 
         public virtual DbSet<ShpcfmEntity> ShpcfmEntity { get; set; }
+        public virtual DbSet<GateOutInboundEntity> GateOutInboundEntities { get; set; }
        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -11,8 +11,6 @@ namespace DataAccess.Domain
     [Table("MFG_TRANSPORTER_MST_TB")]
     public class TransporterEntity : EntityBase
     {
-        [Column("LOCATION_ID")]
-        public decimal LocationId { get; set; }
 
         [Column("TRANSPORTER_CODE")]
         public string? TransporterCode { get; set; }
@@ -98,7 +96,7 @@ namespace DataAccess.Domain
         [Column("CREATION_FLAG")]
         public string? CreationFlag { get; set; }
         public ICollection<VehicleEntity> VehicleEntities { get; set; }
-        public LookUpEntity Locations { get; set; }
+        //public LookUpEntity Locations { get; set; }
         public ICollection<DispatchNoteEntity> TransporterDetail { get; set; }
       
 

@@ -31,15 +31,11 @@ namespace DataAccess.Domain.Masters.LookUp
         public decimal? Attribute14 { get; set; }
         public LookUpTypeEntity LookUpType { get; set; }
 
-        public ICollection<VehicleEntity> LocationId2 { get; set; }
-
-        public ICollection<TransporterEntity> Locations2 { get; set; }
+        public ICollection<VehicleEntity> LocationId2 { get; set; }  
 
         public ICollection<VehicleEntity> VehicleSizeId2 { get; set; }
         public ICollection<DispatchNoteEntity> DispatchNoteLocationEntity { get; set; }
         public ICollection<VendorEntity> VendorTaxationType { get; set; }
         public ICollection<VendorEntity> VendorTaxCodes { get; set; }
-
-
     }
 }

@@ -97,9 +97,9 @@ namespace DataAccess
                 entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd();
 
-                entity.HasOne(b => b.Locations)
-                .WithMany(a => a.Locations2)
-                .HasForeignKey(b => b.LocationId);
+                //entity.HasOne(b => b.Locations)
+                //.WithMany(a => a.Locations2)
+                //.HasForeignKey(b => b.LocationId);
 
             });
 

@@ -72,6 +72,8 @@ namespace DataAccess.Implementations
             }
             catch (Exception ex)
             {
+                applicationDbContext.Entry(commonInboundEntity).State = EntityState.Detached;
+
                 logger.LogError(
                     ex,
                     "Repository error in {MethodName}. interfaceId={InterfaceId}, txnTypeCode={TxnTypeCode}, documentNo={DocumentNo}",
@@ -79,6 +81,7 @@ namespace DataAccess.Implementations
                     commonInboundEntity.InterfaceId,
                     commonInboundEntity.TxnTypeCode,
                     commonInboundEntity.DocumentNo);
+
                 throw;
             }
         }

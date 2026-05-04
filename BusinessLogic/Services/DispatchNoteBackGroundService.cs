@@ -18,9 +18,8 @@ namespace BusinessLogic.Services
         public async Task<DispatchNoteProcessingResult> ProcessPendingDispatchNotesAsync(CancellationToken cancellationToken)
         {
             var dispatchResult = await ProcessDispatchInboundAsync(cancellationToken);
-            var gateOutResult = dispatchNoteRepository.IsGateOutConfigured()
-                ? await ProcessGateOutInboundAsync(cancellationToken)
-                : LogAndReturnSkippedGateOutResult();
+
+            var gateOutResult =  await ProcessGateOutInboundAsync(cancellationToken);
 
             return new DispatchNoteProcessingResult
             {
@@ -28,12 +27,6 @@ namespace BusinessLogic.Services
                 ProcessedCount = dispatchResult.ProcessedCount + gateOutResult.ProcessedCount,
                 FailedCount = dispatchResult.FailedCount + gateOutResult.FailedCount
             };
-        }
-
-        private DispatchNoteProcessingResult LogAndReturnSkippedGateOutResult()
-        {
-            logger.LogWarning("Gate-out inbound processing skipped because Oracle_INTF connection is not configured.");
-            return new DispatchNoteProcessingResult();
         }
 
         private async Task<DispatchNoteProcessingResult> ProcessDispatchInboundAsync(CancellationToken cancellationToken)
@@ -112,27 +105,39 @@ namespace BusinessLogic.Services
                 DocumentCreationDate = dispatchNote.DispatchDate,
                 DocumentType = DispatchDocumentType,
                 InvoiceAmount = invoiceAmount,
-                CgstUtRate = 0,
+
+                CgstRate = 0,
                 SgstUtRate = 0,
                 IgstRate = 0,
+
                 TaxAmountCgst = 0,
                 TaxAmountSgstUtgst = 0,
                 TaxAmountIgst = 0,
                 InvoiceTotAmountWithtax = invoiceAmount,
+
                 FromPlantCode = dispatchNote.Locations?.Code,
                 FromStorageLocation = dispatchNote.Locations?.Value,
                 FromCustomerCode = null,
+
                 ToPlantCode = null,
                 ToStorageLocation = null,
                 ToVendorCode = dispatchNote.Suppliers?.VendorCode,
                 ToCustomerCode = null,
+
                 TransporterCode = dispatchNote.Transporter?.TransporterCode,
                 TransportationMode = dispatchNote.TransporterMode,
                 VehicleNo = dispatchNote.Vehicles?.VehicleNumber,
                 VehicleSize = dispatchNote.Vehicles?.VehicleSize?.Code ?? dispatchNote.Vehicles?.VehicleSize?.Value,
+
                 FrlrNo = dispatchNote.FrlrNumber,
                 FrlrDate = dispatchNote.FrlrDate,
-                TravellingDistance = 0
+                TravellingDistance = 0,
+
+                TransferFlag = null,
+                TransferDate = null,
+                GlobalUniqueId = null,
+                BamSequenceId = null,
+                OldGlobalUniqueId = null
             };
         }
 
@@ -147,7 +152,7 @@ namespace BusinessLogic.Services
                 DocumentCreationDate = gateOutRecord.ZdocumentDate ?? DateTime.UtcNow.Date,
                 DocumentType = string.IsNullOrWhiteSpace(gateOutRecord.ZtxnType) ? GateOutTxnTypeCode : gateOutRecord.ZtxnType.Trim().ToUpperInvariant(),
                 InvoiceAmount = 0,
-                CgstUtRate = 0,
+                CgstRate = 0,
                 SgstUtRate = 0,
                 IgstRate = 0,
                 TaxAmountCgst = 0,

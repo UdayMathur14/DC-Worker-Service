@@ -1,33 +1,34 @@
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataAccess.Domain
 {
-    [Table("COMMON_INBOUND_TB")]
+    [Table("COMMON_INBOUND_TB", Schema = "ILFRM")]
     public class CommonInboundEntity
     {
         [Column("INTERFACE_ID")]
         public decimal InterfaceId { get; set; }
 
         [Column("TXN_TYPE_CODE")]
-        public string? TxnTypeCode { get; set; }
+        public string TxnTypeCode { get; set; } = string.Empty;
 
         [Column("DOMAIN")]
-        public string? Domain { get; set; }
+        public string Domain { get; set; } = string.Empty;
 
         [Column("DOCUMENT_NO")]
-        public string? DocumentNo { get; set; }
+        public string DocumentNo { get; set; } = string.Empty;
 
         [Column("DOCUMENT_CREATION_DATE")]
         public DateTime DocumentCreationDate { get; set; }
 
         [Column("DOCUMENT_TYPE")]
-        public string? DocumentType { get; set; }
+        public string DocumentType { get; set; } = string.Empty;
 
         [Column("INVOICE_AMOUNT")]
         public decimal InvoiceAmount { get; set; }
 
-        [Column("CGST_UT_RATE")]
-        public decimal? CgstUtRate { get; set; }
+        [Column("CGST_RATE")]
+        public decimal? CgstRate { get; set; }
 
         [Column("SGST_UT_RATE")]
         public decimal? SgstUtRate { get; set; }
@@ -88,5 +89,20 @@ namespace DataAccess.Domain
 
         [Column("TRAVELLING_DISTANCE")]
         public decimal? TravellingDistance { get; set; }
+
+        [Column("TRANSFER_FLAG")]
+        public string? TransferFlag { get; set; }
+
+        [Column("TRANSFER_DATE")]
+        public DateTime? TransferDate { get; set; }
+
+        [Column("GLOBAL_UNIQUE_ID")]
+        public string? GlobalUniqueId { get; set; }
+
+        [Column("BAM_SEQUENCE_ID")]
+        public string? BamSequenceId { get; set; }
+
+        [Column("OLD_GLOBAL_UNIQUE_ID")]
+        public string? OldGlobalUniqueId { get; set; }
     }
 }

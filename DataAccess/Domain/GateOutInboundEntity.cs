@@ -39,5 +39,8 @@ namespace DataAccess.Domain
 
         [Column("VEH_SIZE")]
         public string? VehSize { get; set; }
+
+        [Column("ATTRIBUTE4")]
+        public string? Attribute4 { get; set; }
     }
 }

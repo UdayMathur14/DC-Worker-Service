@@ -31,6 +31,10 @@ namespace DataAccess.Domain
         public string? OpenFlag { get; set; }
         [Column("TRANSPORTER_MODE")]
         public string? TransporterMode { get; set; }
+
+        [Column("ATTRIBUTE4")]
+        public string? Attribute4 { get; set; }
+
         public ICollection<DispatchNotePartItemsEntity> DispatchNotePartEntities { get; set; }
         public LookUpEntity Locations { get; set; }
         public VendorEntity Suppliers { get; set; }

@@ -10,10 +10,9 @@ namespace BusinessLogic.Services
         IDispatchNoteRepository dispatchNoteRepository,
         ILogger<DispatchNoteService> logger) : IDispatchNoteService
     {
-        private const string DispatchTxnTypeCode = "DISPATCH_NOTE";
+        private const string DispatchTxnTypeCode = "RB";
         private const string GateOutTxnTypeCode = "GATE_OUT";
-        private const string DispatchDomainFallback = "DISPATCH";
-        private const string DispatchDocumentType = "DISPATCH_NOTE";
+        private const string DispatchDocumentType = "RB";
 
         public async Task<DispatchNoteProcessingResult> ProcessPendingDispatchNotesAsync(CancellationToken cancellationToken)
         {
@@ -93,14 +92,13 @@ namespace BusinessLogic.Services
 
         private static CommonInboundEntity MapDispatchInboundToCommonInbound(DispatchNoteEntity dispatchNote)
         {
-            var invoiceAmount = dispatchNote.DispatchNotePartEntities?
-                .Sum(item => item.PartQty * (item.PartEntity?.PartPrice ?? 0m)) ?? 0m;
+            var invoiceAmount = 0;
 
             return new CommonInboundEntity
             {
                 InterfaceId = dispatchNote.Id,
                 TxnTypeCode = DispatchTxnTypeCode,
-                Domain = dispatchNote.Locations?.Code ?? DispatchDomainFallback,
+                Domain = "MFG",
                 DocumentNo = dispatchNote.DispatchNumber,
                 DocumentCreationDate = dispatchNote.DispatchDate,
                 DocumentType = DispatchDocumentType,

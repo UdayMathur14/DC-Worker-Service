@@ -44,14 +44,6 @@ namespace DataAccess.Implementations
         {
             try
             {
-                if (IntfDbContext is null)
-                {
-                    logger.LogWarning(
-                        "Repository warning in {MethodName}. INTF DbContext is not configured.",
-                        nameof(GetGateOutInboundAsync));
-                    return Array.Empty<GateOutInboundEntity>();
-                }
-
                 return await IntfDbContext.GateOutInboundEntities
                     .OrderBy(item => item.InterfaceId)
                     .ToListAsync(cancellationToken);

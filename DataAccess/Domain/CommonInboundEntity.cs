@@ -104,5 +104,29 @@ namespace DataAccess.Domain
 
         [Column("OLD_GLOBAL_UNIQUE_ID")]
         public string? OldGlobalUniqueId { get; set; }
+
+        [Column("CONTROL_OUTGOING_BY")]
+        public string? ControlOutgoingBy { get; set; }
+
+        [Column("CONTROL_OUTGOING_DATE")]
+        public DateTime? ControlOutgoingDate { get; set; }
+
+        [Column("CONTROL_OUTGOING_LAST_UPDATED_BY")]
+        public string? ControlOutgoingLastUpdatedBy { get; set; }
+
+        [Column("CONTROL_OUTGOING_LAST_UPDATE_DATE")]
+        public DateTime? ControlOutgoingLastUpdateDate { get; set; }
+
+        [Column("CONTROL_OUTGOING_REMARKS")]
+        public string? ControlOutgoingRemarks { get; set; }
+
+        [Column("GATE_OUT_BY")]
+        public string? GateOutBy { get; set; }
+
+        [Column("GATE_OUT_DATE")]
+        public DateTime? GateOutDate { get; set; }
+
+        [Column("STATUS")]
+        public string? Status { get; set; }
     }
 }

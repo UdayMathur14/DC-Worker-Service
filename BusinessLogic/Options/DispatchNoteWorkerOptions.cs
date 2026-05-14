@@ -4,7 +4,7 @@ namespace BusinessLogic.Options
     {
         public const string SectionName = "DispatchNoteWorker";
 
-        public int PollIntervalSeconds { get; set; } = 60;
+        public int PollIntervalSeconds { get; set; } = 900;
 
         public int BatchSize { get; set; } = 25;
 

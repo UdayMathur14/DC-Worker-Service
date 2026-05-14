@@ -11,6 +11,7 @@ namespace DataAccess.Implementations
         IServiceProvider serviceProvider,
         ILogger<DispatchNoteRepository> logger) : IDispatchNoteRepository
     {
+        private const string ProcessedFlag = "Y";
         private IntfDbContext? IntfDbContext => serviceProvider.GetService<IntfDbContext>();
 
         public bool IsGateOutConfigured()
@@ -23,6 +24,7 @@ namespace DataAccess.Implementations
             try
             {
                 return await applicationDbContext.DispatchNoteEntity
+                    .Where(note => note.Attribute4 == null || note.Attribute4.Trim().ToUpper() != ProcessedFlag)
                     .Include(note => note.Locations)
                     .Include(note => note.Suppliers)
                     .Include(note => note.Vehicles)
@@ -44,7 +46,10 @@ namespace DataAccess.Implementations
         {
             try
             {
-                return await IntfDbContext.GateOutInboundEntities
+                var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("Gate-out interface database context is not configured.");
+
+                return await intfDbContext.GateOutInboundEntities
+                    .Where(item => item.Attribute4 == null || item.Attribute4.Trim().ToUpper() != ProcessedFlag)
                     .OrderBy(item => item.InterfaceId)
                     .ToListAsync(cancellationToken);
             }
@@ -73,6 +78,52 @@ namespace DataAccess.Implementations
                     commonInboundEntity.InterfaceId,
                     commonInboundEntity.TxnTypeCode,
                     commonInboundEntity.DocumentNo);
+
+                throw;
+            }
+        }
+
+        public async Task MarkDispatchInboundProcessedAsync(decimal dispatchNoteId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await applicationDbContext.DispatchNoteEntity
+                    .Where(note => note.Id == dispatchNoteId)
+                    .ExecuteUpdateAsync(
+                        updates => updates.SetProperty(note => note.Attribute4, ProcessedFlag),
+                        cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Repository error in {MethodName}. dispatchNoteId={DispatchNoteId}",
+                    nameof(MarkDispatchInboundProcessedAsync),
+                    dispatchNoteId);
+
+                throw;
+            }
+        }
+
+        public async Task MarkGateOutInboundProcessedAsync(decimal interfaceId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("Gate-out interface database context is not configured.");
+
+                await intfDbContext.GateOutInboundEntities
+                    .Where(item => item.InterfaceId == interfaceId)
+                    .ExecuteUpdateAsync(
+                        updates => updates.SetProperty(item => item.Attribute4, ProcessedFlag),
+                        cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Repository error in {MethodName}. interfaceId={InterfaceId}",
+                    nameof(MarkGateOutInboundProcessedAsync),
+                    interfaceId);
 
                 throw;
             }

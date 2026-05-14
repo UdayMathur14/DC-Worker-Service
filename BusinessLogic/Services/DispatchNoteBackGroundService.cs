@@ -42,6 +42,7 @@ namespace BusinessLogic.Services
                 {
                     var commonInboundEntity = MapDispatchInboundToCommonInbound(dispatchNote);
                     await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
+                    await dispatchNoteRepository.MarkDispatchInboundProcessedAsync(dispatchNote.Id, cancellationToken);
                     insertedCount++;
                 }
                 catch (Exception ex)
@@ -73,6 +74,7 @@ namespace BusinessLogic.Services
                 {
                     var commonInboundEntity = MapGateOutInboundToCommonInbound(gateOutRecord);
                     await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
+                    await dispatchNoteRepository.MarkGateOutInboundProcessedAsync(gateOutRecord.InterfaceId, cancellationToken);
                     insertedCount++;
                 }
                 catch (Exception ex)

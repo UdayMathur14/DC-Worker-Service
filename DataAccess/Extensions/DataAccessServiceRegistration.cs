@@ -12,7 +12,7 @@ namespace DataAccess.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
             var ilfrmConnectionString = ResolveConnectionString(configuration, ConnectionString.IlfrmSchema, "Oracle_ILFRM");
-            var intfConnectionString = ResolveOptionalConnectionString(configuration, ConnectionString.IntfSchema, "");
+            var intfConnectionString = ResolveOptionalConnectionString(configuration, ConnectionString.IntfSchema, "Oracle_INTF");
 
             services.AddDbContext<ApplicationDbContext>(options =>
             {

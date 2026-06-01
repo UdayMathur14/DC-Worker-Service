@@ -13,19 +13,19 @@ namespace DataAccess.Domain
         public string TxnTypeCode { get; set; } = string.Empty;
 
         [Column("DOMAIN")]
-        public string Domain { get; set; } = string.Empty;
+        public string? Domain { get; set; } = string.Empty;
 
         [Column("DOCUMENT_NO")]
-        public string DocumentNo { get; set; } = string.Empty;
+        public string? DocumentNo { get; set; } = string.Empty;
 
         [Column("DOCUMENT_CREATION_DATE")]
-        public DateTime DocumentCreationDate { get; set; }
+        public DateTime? DocumentCreationDate { get; set; }
 
         [Column("DOCUMENT_TYPE")]
-        public string DocumentType { get; set; } = string.Empty;
+        public string? DocumentType { get; set; } = string.Empty;
 
         [Column("INVOICE_AMOUNT")]
-        public decimal InvoiceAmount { get; set; }
+        public decimal? InvoiceAmount { get; set; }
 
         [Column("CGST_RATE")]
         public decimal? CgstRate { get; set; }

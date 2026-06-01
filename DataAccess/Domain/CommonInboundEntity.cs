@@ -72,6 +72,9 @@ namespace DataAccess.Domain
         [Column("TRANSPORTER_CODE")]
         public string? TransporterCode { get; set; }
 
+        [Column("TRANSPORTER_NAME")]
+        public string? TransporterName { get; set; }
+
         [Column("TRANSPORTATION_MODE")]
         public string? TransportationMode { get; set; }
 

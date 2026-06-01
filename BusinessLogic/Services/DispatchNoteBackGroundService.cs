@@ -125,6 +125,7 @@ namespace BusinessLogic.Services
                 ToCustomerCode = null,
 
                 TransporterCode = dispatchNote.Transporter?.TransporterCode,
+                TransporterName = dispatchNote.Transporter?.TransporterName,
                 TransportationMode = dispatchNote.TransporterMode,
                 VehicleNo = dispatchNote.Vehicles?.VehicleNumber,
                 VehicleSize = dispatchNote.Vehicles?.VehicleSize?.Code ?? dispatchNote.Vehicles?.VehicleSize?.Value,
@@ -167,6 +168,7 @@ namespace BusinessLogic.Services
                 ToVendorCode = null,
                 ToCustomerCode = null,
                 TransporterCode = gateOutRecord.TransId,
+                TransporterName = gateOutRecord.TransName,
                 TransportationMode = gateOutRecord.ZtransMode,
                 VehicleNo = gateOutRecord.Vehicle,
                 VehicleSize = gateOutRecord.VehSize,

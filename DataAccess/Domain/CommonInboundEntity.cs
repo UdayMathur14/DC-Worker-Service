@@ -131,5 +131,8 @@ namespace DataAccess.Domain
 
         [Column("STATUS")]
         public string? Status { get; set; }
+
+        [Column("TRANSPORTER_TYPE")]
+        public string? TransporterType { get; set; }
     }
 }

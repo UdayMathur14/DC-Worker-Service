@@ -137,7 +137,7 @@ namespace DataAccess
 
             modelBuilder.Entity<CommonInboundEntity>(entity =>
             {
-                entity.HasKey(e => new { e.InterfaceId, e.TxnTypeCode });
+                entity.HasKey(e => new { e.Id });
             });
 
             base.OnModelCreating(modelBuilder);

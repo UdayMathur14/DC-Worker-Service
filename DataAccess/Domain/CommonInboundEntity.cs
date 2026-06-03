@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataAccess.Domain
@@ -6,6 +7,11 @@ namespace DataAccess.Domain
     [Table("COMMON_INBOUND_TB", Schema = "ILFRM")]
     public class CommonInboundEntity
     {
+        [Key]
+        [Column("ID")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public decimal Id { get; set; }
+
         [Column("INTERFACE_ID")]
         public decimal InterfaceId { get; set; }
 
@@ -130,7 +136,7 @@ namespace DataAccess.Domain
         public DateTime? GateOutDate { get; set; }
 
         [Column("STATUS")]
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "Approved";
 
         [Column("TRANSPORTER_TYPE")]
         public string? TransporterType { get; set; }

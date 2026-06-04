@@ -42,16 +42,65 @@ namespace DataAccess.Implementations
             }
         }
 
-        public async Task<IReadOnlyList<GateOutInboundEntity>> GetGateOutInboundAsync(CancellationToken cancellationToken)
+        //public async Task<IReadOnlyList<GateOutInboundEntity>> GetGateOutInboundAsync(CancellationToken cancellationToken)
+        //{
+        //    try
+        //    {
+        //        var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("Gate-out interface database context is not configured.");
+
+        //        return await intfDbContext.GateOutInboundEntities
+        //            .Where(item => item.Attribute4 == null || item.Attribute4.Trim().ToUpper() != ProcessedFlag)
+        //            .OrderBy(item => item.InterfaceId)
+        //            .ToListAsync(cancellationToken);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        logger.LogError(ex, "Repository error in {MethodName}.", nameof(GetGateOutInboundAsync));
+        //        throw;
+        //    }
+        //}
+
+        public async Task<IReadOnlyList<GateOutInboundEntity>> GetGateOutInboundAsync(
+    CancellationToken cancellationToken)
         {
             try
             {
-                var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("Gate-out interface database context is not configured.");
+                var intfDbContext = IntfDbContext
+                    ?? throw new InvalidOperationException("Gate-out interface database context is not configured.");
 
-                return await intfDbContext.GateOutInboundEntities
-                    .Where(item => item.Attribute4 == null || item.Attribute4.Trim().ToUpper() != ProcessedFlag)
-                    .OrderBy(item => item.InterfaceId)
-                    .ToListAsync(cancellationToken);
+                return await (
+                    from gateOut in intfDbContext.GateOutInboundEntities
+
+                    join frm in intfDbContext.NerpFrmTxnEntities
+                    on gateOut.ZdocumentNo equals frm.DocumentNo
+                    into frmGroup
+
+                    from frm in frmGroup.DefaultIfEmpty()
+
+                    where gateOut.Attribute4 == null
+                       || gateOut.Attribute4.Trim().ToUpper() != ProcessedFlag
+
+                    orderby gateOut.InterfaceId
+
+                    select new GateOutInboundEntity
+                    {
+                        InterfaceId = gateOut.InterfaceId,
+                        ZtxnType = gateOut.ZtxnType,
+                        Zdomain = gateOut.Zdomain,
+                        Werks = gateOut.Werks,
+                        ZdocumentNo = gateOut.ZdocumentNo,
+                        ZdocumentDate = gateOut.ZdocumentDate,
+                        TransId = gateOut.TransId,
+                        TransName = gateOut.TransName,
+                        ZtransMode = gateOut.ZtransMode,
+                        Vehicle = gateOut.Vehicle,
+                        VehSize = gateOut.VehSize,
+                        Attribute4 = gateOut.Attribute4,
+
+                        FrlrNo = frm != null ? frm.FrlrNo : null,
+                        FrlrDate = frm != null ? frm.FrlrDate : null
+                    }
+                ).ToListAsync(cancellationToken);
             }
             catch (Exception ex)
             {

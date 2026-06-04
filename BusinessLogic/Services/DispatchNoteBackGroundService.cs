@@ -172,8 +172,8 @@ namespace BusinessLogic.Services
                 TransportationMode = gateOutRecord.ZtransMode,
                 VehicleNo = gateOutRecord.Vehicle,
                 VehicleSize = gateOutRecord.VehSize,
-                FrlrNo = null,
-                FrlrDate = null,
+                FrlrNo = gateOutRecord.FrlrNo,
+                FrlrDate = gateOutRecord.FrlrDate,
                 TravellingDistance = 0
             };
         }

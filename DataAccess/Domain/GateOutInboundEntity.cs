@@ -42,5 +42,11 @@ namespace DataAccess.Domain
 
         [Column("ATTRIBUTE4")]
         public string? Attribute4 { get; set; }
+
+        [NotMapped]
+        public string? FrlrNo { get; set; }
+
+        [NotMapped]
+        public DateTime? FrlrDate { get; set; }
     }
 }

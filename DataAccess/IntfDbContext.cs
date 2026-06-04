@@ -1,4 +1,5 @@
 ﻿using DataAccess.Domain;
+using DataAccess.Domain.OutboundTransaction.INTF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -15,7 +16,7 @@ namespace DataAccess
 
         public virtual DbSet<ShpcfmEntity> ShpcfmEntity { get; set; }
         public virtual DbSet<GateOutInboundEntity> GateOutInboundEntities { get; set; }
-       
+        public virtual DbSet<NerpFrmTxnEntity> NerpFrmTxnEntities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

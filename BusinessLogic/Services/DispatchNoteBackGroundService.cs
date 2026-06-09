@@ -3,6 +3,7 @@ using BusinessLogic.Models;
 using DataAccess.Domain;
 using DataAccess.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace BusinessLogic.Services
 {
@@ -12,6 +13,7 @@ namespace BusinessLogic.Services
     {
         private const string DispatchTxnTypeCode = "RB";
         private const string GateOutTxnTypeCode = "GATE_OUT";
+        private const string ShpcfmTxnTypeCode = "SAL";
         private const string DispatchDocumentType = "RB";
 
         public async Task<DispatchNoteProcessingResult> ProcessPendingDispatchNotesAsync(CancellationToken cancellationToken)
@@ -20,11 +22,13 @@ namespace BusinessLogic.Services
 
             var gateOutResult =  await ProcessGateOutInboundAsync(cancellationToken);
 
+            var shpcfmResult = await ProcessShpcfmInboundAsync(cancellationToken);
+
             return new DispatchNoteProcessingResult
             {
-                TotalFetched = dispatchResult.TotalFetched + gateOutResult.TotalFetched,
-                ProcessedCount = dispatchResult.ProcessedCount + gateOutResult.ProcessedCount,
-                FailedCount = dispatchResult.FailedCount + gateOutResult.FailedCount
+                TotalFetched = dispatchResult.TotalFetched + gateOutResult.TotalFetched + shpcfmResult.TotalFetched,
+                ProcessedCount = dispatchResult.ProcessedCount + gateOutResult.ProcessedCount + shpcfmResult.ProcessedCount,
+                FailedCount = dispatchResult.FailedCount + gateOutResult.FailedCount + shpcfmResult.FailedCount
             };
         }
 
@@ -55,6 +59,41 @@ namespace BusinessLogic.Services
             return new DispatchNoteProcessingResult
             {
                 TotalFetched = dispatchNotes.Count,
+                ProcessedCount = insertedCount,
+                FailedCount = failedCount
+            };
+        }
+
+        private async Task<DispatchNoteProcessingResult> ProcessShpcfmInboundAsync(CancellationToken cancellationToken)
+        {
+            var shpcfmRecords = await dispatchNoteRepository.GetShpcfmInboundAsync(cancellationToken);
+            var insertedCount = 0;
+            var failedCount = 0;
+
+            foreach (var shpcfmRecord in shpcfmRecords)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var commonInboundEntity = MapShpcfmInboundToCommonInbound(shpcfmRecord);
+                    await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
+                    await dispatchNoteRepository.MarkShpcfmInboundProcessedAsync(shpcfmRecord.InterfaceId, cancellationToken);
+                    insertedCount++;
+                }
+                catch (Exception ex)
+                {
+                    failedCount++;
+                    logger.LogError(
+                        ex,
+                        "SHPCFM inbound insert failed for InterfaceId={InterfaceId}",
+                        shpcfmRecord.InterfaceId);
+                }
+            }
+
+            return new DispatchNoteProcessingResult
+            {
+                TotalFetched = shpcfmRecords.Count,
                 ProcessedCount = insertedCount,
                 FailedCount = failedCount
             };
@@ -176,6 +215,41 @@ namespace BusinessLogic.Services
                 FrlrDate = gateOutRecord.FrlrDate,
                 TravellingDistance = 0
             };
+        }
+
+        private static CommonInboundEntity MapShpcfmInboundToCommonInbound(ShpcfmEntity shpcfmRecord)
+        {
+            return new CommonInboundEntity
+            {
+                InterfaceId = ResolveShpcfmInterfaceId(shpcfmRecord.InterfaceId),
+                TxnTypeCode = ShpcfmTxnTypeCode,
+                Domain = ShpcfmTxnTypeCode,
+                DocumentNo = shpcfmRecord.Attribute19,
+                DocumentCreationDate = shpcfmRecord.RecordCreationDate,
+                DocumentType = ShpcfmTxnTypeCode,
+                InvoiceAmount = 0,
+                CgstRate = 0,
+                SgstUtRate = 0,
+                IgstRate = 0,
+                TaxAmountCgst = 0,
+                TaxAmountSgstUtgst = 0,
+                TaxAmountIgst = 0,
+                InvoiceTotAmountWithtax = 0,
+                FromPlantCode = shpcfmRecord.Werks,
+                VehicleNo = shpcfmRecord.Attribute12,
+                TransporterCode = shpcfmRecord.CarrierCode,
+                TravellingDistance = 0
+            };
+        }
+
+        private static decimal ResolveShpcfmInterfaceId(string? interfaceId)
+        {
+            if (decimal.TryParse(interfaceId, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsedInterfaceId))
+            {
+                return parsedInterfaceId;
+            }
+
+            return 0;
         }
     }
 }

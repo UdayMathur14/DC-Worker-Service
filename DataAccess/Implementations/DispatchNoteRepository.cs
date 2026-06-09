@@ -42,26 +42,7 @@ namespace DataAccess.Implementations
             }
         }
 
-        //public async Task<IReadOnlyList<GateOutInboundEntity>> GetGateOutInboundAsync(CancellationToken cancellationToken)
-        //{
-        //    try
-        //    {
-        //        var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("Gate-out interface database context is not configured.");
-
-        //        return await intfDbContext.GateOutInboundEntities
-        //            .Where(item => item.Attribute4 == null || item.Attribute4.Trim().ToUpper() != ProcessedFlag)
-        //            .OrderBy(item => item.InterfaceId)
-        //            .ToListAsync(cancellationToken);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        logger.LogError(ex, "Repository error in {MethodName}.", nameof(GetGateOutInboundAsync));
-        //        throw;
-        //    }
-        //}
-
-        public async Task<IReadOnlyList<GateOutInboundEntity>> GetGateOutInboundAsync(
-    CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<GateOutInboundEntity>> GetGateOutInboundAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -71,11 +52,9 @@ namespace DataAccess.Implementations
                 return await (
                     from gateOut in intfDbContext.GateOutInboundEntities
 
-                    join frm in intfDbContext.NerpFrmTxnEntities
-                    on gateOut.ZdocumentNo equals frm.DocumentNo
-                    into frmGroup
-
-                    from frm in frmGroup.DefaultIfEmpty()
+                    let frm = intfDbContext.NerpFrmTxnEntities
+                                 .Where(f => f.DocumentNo == gateOut.ZdocumentNo)
+                                 .FirstOrDefault()
 
                     where gateOut.Attribute4 == null
                        || gateOut.Attribute4.Trim().ToUpper() != ProcessedFlag
@@ -96,7 +75,6 @@ namespace DataAccess.Implementations
                         Vehicle = gateOut.Vehicle,
                         VehSize = gateOut.VehSize,
                         Attribute4 = gateOut.Attribute4,
-
                         FrlrNo = frm != null ? frm.FrlrNo : null,
                         FrlrDate = frm != null ? frm.FrlrDate : null
                     }
@@ -128,6 +106,25 @@ namespace DataAccess.Implementations
                     commonInboundEntity.TxnTypeCode,
                     commonInboundEntity.DocumentNo);
 
+                throw;
+            }
+        }
+
+        public async Task<IReadOnlyList<ShpcfmEntity>> GetShpcfmInboundAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var intfDbContext = IntfDbContext
+                    ?? throw new InvalidOperationException("SHPCFM interface database context is not configured.");
+
+                return await intfDbContext.ShpcfmEntity
+                    .Where(item => item.Attribute2 == null || item.Attribute2.Trim().ToUpper() != ProcessedFlag)
+                    .OrderBy(item => item.InterfaceId)
+                    .ToListAsync(cancellationToken);        
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Repository error in {MethodName}.", nameof(GetShpcfmInboundAsync));
                 throw;
             }
         }
@@ -172,6 +169,30 @@ namespace DataAccess.Implementations
                     ex,
                     "Repository error in {MethodName}. interfaceId={InterfaceId}",
                     nameof(MarkGateOutInboundProcessedAsync),
+                    interfaceId);
+
+                throw;
+            }
+        }
+
+        public async Task MarkShpcfmInboundProcessedAsync(string? interfaceId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("SHPCFM interface database context is not configured.");
+
+                await intfDbContext.ShpcfmEntity
+                    .Where(item => item.InterfaceId == interfaceId)
+                    .ExecuteUpdateAsync(
+                        updates => updates.SetProperty(item => item.Attribute2, ProcessedFlag),
+                        cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Repository error in {MethodName}. interfaceId={InterfaceId}",
+                    nameof(MarkShpcfmInboundProcessedAsync),
                     interfaceId);
 
                 throw;

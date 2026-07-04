@@ -76,7 +76,7 @@ namespace DataAccess.Implementations
                         VehSize = gateOut.VehSize,
                         Attribute4 = gateOut.Attribute4,
                         FrlrNo = frm != null ? frm.FrlrNo : null,
-                        FrlrDate = frm != null ? frm.FrlrDate : null
+                        FrlrDate = null
                     }
                 ).ToListAsync(cancellationToken);
             }

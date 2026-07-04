@@ -154,7 +154,7 @@ namespace BusinessLogic.Services
                 TaxAmountIgst = 0,
                 InvoiceTotAmountWithtax = invoiceAmount,
 
-                FromPlantCode = dispatchNote.Locations?.Code,
+                FromPlantCode = string.Equals(dispatchNote.Locations?.Code?.Trim(), "HA", StringComparison.OrdinalIgnoreCase)? "AO2": dispatchNote.Locations?.Code,
                 FromStorageLocation = dispatchNote.Locations?.Value,
                 FromCustomerCode = null,
 
@@ -238,7 +238,9 @@ namespace BusinessLogic.Services
                 FromPlantCode = shpcfmRecord.Werks,
                 VehicleNo = shpcfmRecord.Attribute12,
                 TransporterCode = shpcfmRecord.CarrierCode,
-                TravellingDistance = 0
+                TravellingDistance = 0,
+                FrlrNo = null, 
+                FrlrDate = null,
             };
         }
 

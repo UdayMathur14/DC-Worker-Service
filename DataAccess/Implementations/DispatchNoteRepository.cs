@@ -52,10 +52,6 @@ namespace DataAccess.Implementations
                 return await (
                     from gateOut in intfDbContext.GateOutInboundEntities
 
-                    let frm = intfDbContext.NerpFrmTxnEntities
-                                 .Where(f => f.DocumentNo == gateOut.ZdocumentNo)
-                                 .FirstOrDefault()
-
                     where gateOut.Attribute4 == null
                        || gateOut.Attribute4.Trim().ToUpper() != ProcessedFlag
 
@@ -75,7 +71,7 @@ namespace DataAccess.Implementations
                         Vehicle = gateOut.Vehicle,
                         VehSize = gateOut.VehSize,
                         Attribute4 = gateOut.Attribute4,
-                        FrlrNo = frm != null ? frm.FrlrNo : null,
+                        FrlrNo = null,
                         FrlrDate = null
                     }
                 ).ToListAsync(cancellationToken);

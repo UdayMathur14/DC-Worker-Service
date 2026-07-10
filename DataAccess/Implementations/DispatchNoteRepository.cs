@@ -83,6 +83,45 @@ namespace DataAccess.Implementations
             }
         }
 
+        public async Task<IReadOnlyList<ExportLspEntity>> GetExportLspInboundAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var intfDbContext = IntfDbContext
+                    ?? throw new InvalidOperationException("Export LSP interface database context is not configured.");
+
+                return await (
+                    from gateOut in intfDbContext.ExportLspEntities
+
+                    where gateOut.Attribute4 == null
+                       || gateOut.Attribute4.Trim().ToUpper() != ProcessedFlag
+
+                    orderby gateOut.InterfaceId
+
+                    select new ExportLspEntity
+                    {
+                        InterfaceId = gateOut.InterfaceId,
+                        ZtxnType = gateOut.ZtxnType,
+                        Zdomain = gateOut.Zdomain,
+                        Werks = gateOut.Werks,
+                        ZdocumentNo = gateOut.ZdocumentNo,
+                        ZdocumentDate = gateOut.ZdocumentDate,
+                        TransId = gateOut.TransId,
+                        TransName = gateOut.TransName,
+                        ZtransMode = gateOut.ZtransMode,
+                        Vehicle = gateOut.Vehicle,
+                        VehSize = gateOut.VehSize,
+                        Attribute1 = gateOut.Attribute1
+                    }
+                ).ToListAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Repository error in {MethodName}.", nameof(GetExportLspInboundAsync));
+                throw;
+            }
+        }
+
         public async Task InsertCommonInboundAsync(CommonInboundEntity commonInboundEntity, CancellationToken cancellationToken)
         {
             try
@@ -165,6 +204,29 @@ namespace DataAccess.Implementations
                     ex,
                     "Repository error in {MethodName}. interfaceId={InterfaceId}",
                     nameof(MarkGateOutInboundProcessedAsync),
+                    interfaceId);
+
+                throw;
+            }
+        }
+
+        public async Task MarkExportLspInboundProcessedAsync(decimal interfaceId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var intfDbContext = IntfDbContext ?? throw new InvalidOperationException("Export LSP interface database context is not configured.");
+                await intfDbContext.ExportLspEntities
+                    .Where(item => item.InterfaceId == interfaceId)
+                    .ExecuteUpdateAsync(
+                        updates => updates.SetProperty(item => item.Attribute4, ProcessedFlag),
+                        cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Repository error in {MethodName}. interfaceId={InterfaceId}",
+                    nameof(MarkExportLspInboundProcessedAsync),
                     interfaceId);
 
                 throw;

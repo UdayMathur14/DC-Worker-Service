@@ -15,6 +15,7 @@ namespace BusinessLogic.Services
         private const string GateOutTxnTypeCode = "GATE_OUT";
         private const string ShpcfmTxnTypeCode = "SAL";
         private const string DispatchDocumentType = "RB";
+        private const string ExportLspDocumentType = "EXP";
 
         public async Task<DispatchNoteProcessingResult> ProcessPendingDispatchNotesAsync(CancellationToken cancellationToken)
         {
@@ -24,11 +25,13 @@ namespace BusinessLogic.Services
 
             var shpcfmResult = await ProcessShpcfmInboundAsync(cancellationToken);
 
+            var exportLspResult = await ProcessExportLspInboundAsync(cancellationToken);
+
             return new DispatchNoteProcessingResult
             {
-                TotalFetched = dispatchResult.TotalFetched + gateOutResult.TotalFetched + shpcfmResult.TotalFetched,
-                ProcessedCount = dispatchResult.ProcessedCount + gateOutResult.ProcessedCount + shpcfmResult.ProcessedCount,
-                FailedCount = dispatchResult.FailedCount + gateOutResult.FailedCount + shpcfmResult.FailedCount
+                TotalFetched = dispatchResult.TotalFetched + gateOutResult.TotalFetched + shpcfmResult.TotalFetched + exportLspResult.TotalFetched,
+                ProcessedCount = dispatchResult.ProcessedCount + gateOutResult.ProcessedCount + shpcfmResult.ProcessedCount + exportLspResult.ProcessedCount,
+                FailedCount = dispatchResult.FailedCount + gateOutResult.FailedCount + shpcfmResult.FailedCount + exportLspResult.FailedCount
             };
         }
 
@@ -131,6 +134,38 @@ namespace BusinessLogic.Services
             };
         }
 
+        private async Task<DispatchNoteProcessingResult> ProcessExportLspInboundAsync(CancellationToken cancellationToken)
+        {
+            var exportLspRecords = await dispatchNoteRepository.GetExportLspInboundAsync(cancellationToken);
+            var insertedCount = 0;
+            var failedCount = 0;
+
+            foreach (var exportLspRecord in exportLspRecords)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var commonInboundEntity = MapExportLspInboundToCommonInbound(exportLspRecord);
+                    await dispatchNoteRepository.InsertCommonInboundAsync(commonInboundEntity, cancellationToken);
+                    await dispatchNoteRepository.MarkExportLspInboundProcessedAsync(exportLspRecord.InterfaceId, cancellationToken);
+                    insertedCount++;
+                }
+                catch (Exception ex)
+                {
+                    failedCount++;
+                    logger.LogError(ex, "Export LSP inbound insert failed for InterfaceId={InterfaceId}", exportLspRecord.InterfaceId);
+                }
+            }
+
+            return new DispatchNoteProcessingResult
+            {
+                TotalFetched = exportLspRecords.Count,
+                ProcessedCount = insertedCount,
+                FailedCount = failedCount
+            };
+        }
+
         private static CommonInboundEntity MapDispatchInboundToCommonInbound(DispatchNoteEntity dispatchNote)
         {
             var invoiceAmount = 0;
@@ -213,6 +248,40 @@ namespace BusinessLogic.Services
                 VehicleSize = gateOutRecord.VehSize,
                 FrlrNo = gateOutRecord.FrlrNo,
                 FrlrDate = gateOutRecord.FrlrDate,
+                TravellingDistance = 0
+            };
+        }
+
+        private static CommonInboundEntity MapExportLspInboundToCommonInbound(ExportLspEntity exportLspRecord)
+        {
+            return new CommonInboundEntity
+            {
+                InterfaceId = exportLspRecord.InterfaceId,
+                TxnTypeCode = string.IsNullOrWhiteSpace(exportLspRecord.ZtxnType) ? ExportLspDocumentType : exportLspRecord.ZtxnType.Trim().ToUpperInvariant(),
+                Domain = exportLspRecord.Zdomain,
+                DocumentNo = exportLspRecord.ZdocumentNo,
+                DocumentCreationDate = exportLspRecord.ZdocumentDate ?? DateTime.UtcNow.Date,
+                DocumentType = string.IsNullOrWhiteSpace(exportLspRecord.ZtxnType) ? ExportLspDocumentType : exportLspRecord.ZtxnType.Trim().ToUpperInvariant(),
+                InvoiceAmount = 0,
+                CgstRate = 0,
+                SgstUtRate = 0,
+                IgstRate = 0,
+                TaxAmountCgst = 0,
+                TaxAmountSgstUtgst = 0,
+                TaxAmountIgst = 0,
+                InvoiceTotAmountWithtax = 0,
+                FromPlantCode = exportLspRecord.Werks,
+                FromStorageLocation = null,
+                FromCustomerCode = null,
+                ToPlantCode = null,
+                ToStorageLocation = null,
+                ToVendorCode = null,
+                ToCustomerCode = null,
+                TransporterName = exportLspRecord.TransName,
+                TransportationMode = exportLspRecord.ZtransMode,
+                VehicleNo = exportLspRecord.Vehicle,
+                VehicleSize = exportLspRecord.VehSize,
+                ContainerNumber = exportLspRecord.Attribute1,
                 TravellingDistance = 0
             };
         }

@@ -12,11 +12,14 @@ namespace DataAccess.Interfaces
 
         Task<IReadOnlyList<ShpcfmEntity>> GetShpcfmInboundAsync(CancellationToken cancellationToken);
 
+        Task<IReadOnlyList<ExportLspEntity>> GetExportLspInboundAsync(CancellationToken cancellationToken);
+
         Task InsertCommonInboundAsync(CommonInboundEntity commonInboundEntity, CancellationToken cancellationToken);
 
         Task MarkDispatchInboundProcessedAsync(decimal dispatchNoteId, CancellationToken cancellationToken);
 
         Task MarkGateOutInboundProcessedAsync(decimal interfaceId, CancellationToken cancellationToken);
+        Task MarkExportLspInboundProcessedAsync(decimal interfaceId, CancellationToken cancellationToken);
 
         Task MarkShpcfmInboundProcessedAsync(string? interfaceId, CancellationToken cancellationToken);
     }

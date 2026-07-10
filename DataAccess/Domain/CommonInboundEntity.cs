@@ -19,10 +19,10 @@ namespace DataAccess.Domain
         public string TxnTypeCode { get; set; } = string.Empty;
 
         [Column("DOMAIN")]
-        public string? Domain { get; set; } = string.Empty;
+        public string Domain { get; set; } = string.Empty;
 
         [Column("DOCUMENT_NO")]
-        public string? DocumentNo { get; set; } = string.Empty;
+        public string DocumentNo { get; set; } = string.Empty;
 
         [Column("DOCUMENT_CREATION_DATE")]
         public DateTime? DocumentCreationDate { get; set; }
@@ -55,7 +55,7 @@ namespace DataAccess.Domain
         public decimal? InvoiceTotAmountWithtax { get; set; }
 
         [Column("FROM_PLANT_CODE")]
-        public string? FromPlantCode { get; set; }
+        public string FromPlantCode { get; set; }
 
         [Column("FROM_STORAGE_LOCATION")]
         public string? FromStorageLocation { get; set; }
@@ -140,5 +140,8 @@ namespace DataAccess.Domain
 
         [Column("TRANSPORTER_TYPE")]
         public string? TransporterType { get; set; }
+
+        [Column("CONTAINER_NUMBER")]
+        public string? ContainerNumber { get; set; }
     }
 }

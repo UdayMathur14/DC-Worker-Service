@@ -1,4 +1,5 @@
 ﻿using DataAccess.Domain;
+using DataAccess.Domain.Masters.LookUp;
 using DataAccess.Domain.OutboundTransaction.INTF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,6 +24,12 @@ namespace DataAccess
         {
           
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<ShpcfmEntity>(entity =>
+            {
+                entity.HasNoKey();
+
+            });
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
